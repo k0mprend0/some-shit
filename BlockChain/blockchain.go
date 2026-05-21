@@ -55,6 +55,10 @@ func (bc *Blockchain) AddBlock(data string) {
 
 		return nil
 	})
+
+	if err != nil {
+		log.Panic(err)
+	}
 }
 
 // Iterator ...
@@ -71,6 +75,11 @@ func (i *BlockchainIterator) Next() *Block {
 	err := i.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(blocksBucket))
 		encodedBlock := b.Get(i.currentHash)
+
+		if encodedBlock == nil {
+			return fmt.Errorf("block not found: %x", i.currentHash)
+		}
+
 		block = DeserializeBlock(encodedBlock)
 
 		return nil
@@ -78,6 +87,10 @@ func (i *BlockchainIterator) Next() *Block {
 
 	if err != nil {
 		log.Panic(err)
+	}
+
+	if block == nil {
+		log.Panic("failed to deserialize block")
 	}
 
 	i.currentHash = block.PrevBlockHash
